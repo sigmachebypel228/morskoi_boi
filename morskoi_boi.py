@@ -3,8 +3,8 @@ pygame.init()
 import pygame.mixer
 pygame.mixer.init()
 
+# Загрузка звуков
 shot_sound = pygame.mixer.Sound('shot.mp3')
-
 fail_sound = pygame.mixer.Sound('fail.mp3')
 win_sound = pygame.mixer.Sound('win.wav')
 pygame.mixer.music.load('soundtrack.mp3')
@@ -34,7 +34,8 @@ missile.centery = screen_rect.centery
 missile_speed_x = 0
 missile_speed_y = 0
 ship_speed_y = 1  # Начальная скорость корабля
-
+hp_ship = 20
+missile_hp = 10
 ship_alive = True
 missile_alive = True
 missile_launched = False
@@ -48,8 +49,12 @@ while running:
             if event.key == pygame.K_SPACE and not missile_launched:
                 missile_launched = True
                 missile_speed_x = 3  # Скорость ракеты по оси X
-                missile_speed_y = 0  # Ракета летит прямо
+                missile_speed_y = 0
+                missile_hp -= 1  # Уменьшаем здоровье ракеты на 1
+
+                # Ракета летит прямо
                 shot_sound.play()
+
     # Бесконечное движение корабля (если корабль жив)
     if ship_alive:
         ship.move_ip(0, ship_speed_y)
@@ -57,19 +62,37 @@ while running:
             ship_speed_y *= -1  # Меняем направление движения корабля
 
     # Управление ракетой
-    if missile_alive:
-        missile.move_ip(missile_speed_x, missile_speed_y)
-        if not missile.colliderect(screen_rect):  # Ракета вышла за пределы экрана?
-            missile_alive = False
-            back_color = fail_color
-            pygame.mixer.music.stop()
-            fail_sound.play()
+        if missile_alive:
+            missile.move_ip(missile_speed_x, missile_speed_y)
+            if not missile.colliderect(screen_rect):  # Торпеда вышла за пределы экрана?
+                if missile_hp > 0:  # Если у торпеды ещё есть здоровье
+                    missile_alive = True
+                    missile_launched = False
+                    missile_speed_x = 0
+                    missile.centerx = screen_rect.left + 5  # Возвращаем торпеду обратно
+                    missile.centery = screen_rect.centery
+                    missile_hp -= 1   # Уменьшаем здоровье торпеды на 1 за промах
+                    print(f'Здоровье торпеды: {missile_hp}')  # Опциональная строка для отладки
+                else:
+                    missile_alive = False
+                    back_color = fail_color
+                    pygame.mixer.music.stop()
+                    fail_sound.play()
         if ship_alive and missile.colliderect(ship):
-            missile_alive = False
-            ship_alive = False
-            back_color = win_color
-            pygame.mixer.music.stop()
-            win_sound.play()
+            if hp_ship > 0 :  # Если корабль еще жив
+                hp_ship -= 1  # Уменьшаем здоровье корабля на 1
+                missile_hp -= 1  # Уменьшаем здоровье ракеты на 1
+                missile.centerx = screen_rect.left + 5  # Возвращаем ракету обратно
+                missile.centery = screen_rect.centery
+                missile_launched = False
+                missile_speed_y = 0
+                missile_speed_x = 0
+                print(f'Жизни корабля {hp_ship}')
+            else:
+                ship_alive = False
+                back_color = win_color
+                pygame.mixer.music.stop()
+                win_sound.play()
 
     # Отрисовка объектов
     screen.fill(back_color)
