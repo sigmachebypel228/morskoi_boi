@@ -1,6 +1,9 @@
 import pygame
+from pygame.locals import *
+
 pygame.init()
 import pygame.mixer
+
 pygame.mixer.init()
 
 # Загрузка звуков
@@ -34,12 +37,15 @@ missile.centery = screen_rect.centery
 missile_speed_x = 0
 missile_speed_y = 0
 ship_speed_y = 1  # Начальная скорость корабля
-hp_ship = 20
-missile_hp = 10
+hp_ship = 10
+missile_hp = 20
 ship_alive = True
 missile_alive = True
 missile_launched = False
 running = True
+
+# Создаем шрифт для вывода текста
+font = pygame.font.SysFont(None, 30)
 
 while running:
     for event in pygame.event.get():
@@ -61,7 +67,7 @@ while running:
         if ship.bottom >= screen_rect.bottom or ship.top <= 0:
             ship_speed_y *= -1  # Меняем направление движения корабля
 
-    # Управление ракетой
+        # Управление ракетой
         if missile_alive:
             missile.move_ip(missile_speed_x, missile_speed_y)
             if not missile.colliderect(screen_rect):  # Торпеда вышла за пределы экрана?
@@ -71,15 +77,15 @@ while running:
                     missile_speed_x = 0
                     missile.centerx = screen_rect.left + 5  # Возвращаем торпеду обратно
                     missile.centery = screen_rect.centery
-                    missile_hp -= 1   # Уменьшаем здоровье торпеды на 1 за промах
-                    print(f'Здоровье торпеды: {missile_hp}')  # Опциональная строка для отладки
+                    missile_hp -= 1  # Уменьшаем здоровье торпеды на 1 за промах
+                    print(f'Здоровье торпеды: {missile_hp // 2}')  # Опциональная строка для отладки
                 else:
                     missile_alive = False
                     back_color = fail_color
                     pygame.mixer.music.stop()
                     fail_sound.play()
         if ship_alive and missile.colliderect(ship):
-            if hp_ship > 0 :  # Если корабль еще жив
+            if hp_ship > 0:  # Если корабль еще жив
                 hp_ship -= 1  # Уменьшаем здоровье корабля на 1
                 missile_hp -= 1  # Уменьшаем здоровье ракеты на 1
                 missile.centerx = screen_rect.left + 5  # Возвращаем ракету обратно
@@ -88,11 +94,16 @@ while running:
                 missile_speed_y = 0
                 missile_speed_x = 0
                 print(f'Жизни корабля {hp_ship}')
+                print(f'Здоровье торпеды: {missile_hp // 2}')
             else:
                 ship_alive = False
                 back_color = win_color
                 pygame.mixer.music.stop()
                 win_sound.play()
+
+    # Рендеринг текста с количеством жизней корабля и торпеды
+    text_ship_hps = font.render(f'Жизни корабля: {hp_ship}', True, (0, 0, 0))  # Черный цвет текста
+    text_missile_hps = font.render(f'Торпед в запасе: {missile_hp // 2}', True, (0, 0, 0))  # Черный цвет текста
 
     # Отрисовка объектов
     screen.fill(back_color)
@@ -100,6 +111,11 @@ while running:
         pygame.draw.rect(screen, ship_color, ship)
     if missile_alive:
         pygame.draw.rect(screen, missile_color, missile)
+
+    # Выводим текст на экран
+    screen.blit(text_ship_hps, (10, 10))  # Размещаем текст в верхнем левом углу
+    screen.blit(text_missile_hps, (10, 40))  # Размещаем текст ниже первого
+
     pygame.display.flip()
 
     clock.tick(FPS)
